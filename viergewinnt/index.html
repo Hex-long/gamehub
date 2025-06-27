@@ -21,7 +21,7 @@
   .yellow { background: yellow; }
 </style>
 
-<!-- Firebase -->
+<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
@@ -30,9 +30,10 @@
 <h1>Vier Gewinnt</h1>
 <div id="game"></div>
 <p id="status"></p>
+<button id="btnBack">Zurück zur Spielauswahl</button>
 
 <script>
-  // Firebase config und Initialisierung
+  // Firebase config - hier deine echten Daten eintragen
 const firebaseConfig = {
 
   apiKey: "AIzaSyBWlVw3NQjuEr77yQfNUWzpg-jb2K5YE6E",
@@ -149,9 +150,8 @@ function checkWin(row, col) {
   return false;
 }
 
-// Sehr einfache Bewertungsfunktion für Minimax (erweitern wenn gewünscht)
 function evaluateBoard(board) {
-  // Für Demo: gib 0 zurück, KI sucht nur freie Plätze
+  // Sehr einfache Bewertung: 0 (kann erweitert werden)
   return 0;
 }
 
@@ -166,7 +166,6 @@ function copyBoard(board) {
   return board.map(row => row.slice());
 }
 
-// Minimax mit Alpha-Beta-Pruning
 function minimax(board, depth, alpha, beta, maximizingPlayer) {
   if(depth === 0) {
     return { score: evaluateBoard(board) };
@@ -233,6 +232,10 @@ createBoard();
 if(mode === 'ai' && currentPlayer === 'yellow') {
   setTimeout(aiMove, 500);
 }
+
+document.getElementById('btnBack').onclick = () => {
+  window.location.href = '../home.html';
+};
 </script>
 </body>
 </html>
