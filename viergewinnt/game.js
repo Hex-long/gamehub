@@ -1,15 +1,18 @@
 const COLS = 7;
 const ROWS = 6;
 let board = [];
-let currentPlayer = 'red'; // rot beginnt
+let currentPlayer;
 let gameOver = false;
 
 const gameDiv = document.getElementById('game');
 const status = document.getElementById('status');
 
+let mode = new URLSearchParams(window.location.search).get('mode');
+currentPlayer = (mode === 'ai') ? 'yellow' : 'red';
+
 // Spielbrett erstellen
 function createBoard() {
-  board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+  board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
   gameDiv.innerHTML = '';
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
@@ -25,20 +28,25 @@ function createBoard() {
       gameDiv.appendChild(cell);
     }
   }
+
+  // Wenn gelb (KI) beginnt
+  if (mode === 'ai' && currentPlayer === 'yellow') {
+    aiMove();
+  }
 }
 
 function isPlayerTurn() {
-  // TODO: Bei Multiplayer: nur aktueller Spieler kann ziehen
-  return true;
+  return !(mode === 'ai' && currentPlayer === 'yellow');
 }
 
 function makeMove(col) {
   if (gameOver) return;
 
   for (let row = ROWS - 1; row >= 0; row--) {
-    if (!board[row][col]) {
+    if (board[row][col] === null) {
       board[row][col] = currentPlayer;
       updateBoard();
+
       if (checkWin(row, col)) {
         gameOver = true;
         status.textContent = currentPlayer + " gewinnt!";
@@ -46,7 +54,7 @@ function makeMove(col) {
       } else {
         togglePlayer();
         if (mode === 'ai' && currentPlayer === 'yellow') {
-          aiMove();
+          setTimeout(aiMove, 200); // kleine Pause für KI-Zug
         }
       }
       break;
@@ -71,10 +79,10 @@ function togglePlayer() {
 
 function checkWin(row, col) {
   const directions = [
-    { dr: 0, dc: 1 },  // horizontal
-    { dr: 1, dc: 0 },  // vertical
-    { dr: 1, dc: 1 },  // diagonal down-right
-    { dr: 1, dc: -1 }  // diagonal down-left
+    { dr: 0, dc: 1 },   // horizontal
+    { dr: 1, dc: 0 },   // vertical
+    { dr: 1, dc: 1 },   // diagonal down-right
+    { dr: 1, dc: -1 }   // diagonal down-left
   ];
 
   function count(dir) {
@@ -109,26 +117,16 @@ function saveWin() {
   });
 }
 
-// KI-Zug (Minimax) placeholder (minimax.js macht das wirklich)
 function aiMove() {
-  const { column } = minimax(board, MAX_DEPTH, -Infinity, Infinity, true);
+  console.table(board); // Debug
+  const { column, score } = minimax(board, MAX_DEPTH, -Infinity, Infinity, true);
+  console.log("KI wählt Spalte:", column, "mit Bewertung:", score);
+
   if (column !== undefined) {
-    setTimeout(() => makeMove(column), 500);
+    makeMove(column);
   } else {
-    // Fallback, falls Minimax nichts findet
-    for (let c = 0; c < COLS; c++) {
-      if (!board[0][c]) {
-        setTimeout(() => makeMove(c), 500);
-        break;
-      }
-    }
+    console.warn("KI konnte keinen gültigen Zug finden.");
   }
 }
 
-let mode = new URLSearchParams(window.location.search).get('mode');
-
 createBoard();
-
-if (mode === 'ai' && currentPlayer === 'yellow') {
-  aiMove();
-}
