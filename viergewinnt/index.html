@@ -1,36 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Vier Gewinnt</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vier Gewinnt</title>
+<link rel="stylesheet" href="style.css" />
 
-  <!-- 🔥 Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<!-- Firebase SDKs müssen VOR eigenen Skripten geladen werden -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
-  <!-- 📦 PeerJS für Multiplayer -->
-  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<!-- PeerJS -->
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
-  <!-- 🔐 Dein Firebase Setup -->
-  <script src="../js/firebase.js"></script>
-  <script src="../js/auth.js"></script>
+<!-- Eigene Firebase-Dateien -->
+<script src="../js/firebase.js"></script>
+<script src="../js/auth.js"></script>
 </head>
-
 <body>
 <h1>Vier Gewinnt</h1>
 <div id="game"></div>
-<button id="btnBack">Zurück zur Spielauswahl</button>
 <p id="status"></p>
-  
+<button id="btnBack">Zurück zur Spielauswahl</button>
+
+<!-- KI zuerst laden -->
 <script src="minimax.js"></script>
+<!-- Spiellogik -->
 <script src="game.js"></script>
+<!-- Multiplayer -->
 <script src="peer.js"></script>
 
 <script>
-document.getElementById('btnBack').onclick = () => {
-  window.location.href = '../home.html';
-};
+  document.getElementById('btnBack').onclick = () => {
+    window.location.href = '../home.html';
+  };
 </script>
 </body>
 </html>
