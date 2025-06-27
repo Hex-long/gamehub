@@ -19,6 +19,13 @@
   }
   .red { background: red; }
   .yellow { background: yellow; }
+  #btnBack {
+    padding: 10px 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 10px;
+    display: inline-block;
+  }
 </style>
 
 <!-- Firebase SDKs -->
@@ -31,29 +38,6 @@
 <div id="game"></div>
 <p id="status"></p>
 <button id="btnBack">Zurück zur Spielauswahl</button>
-
-<script>
-  // Firebase config - hier deine echten Daten eintragen
-const firebaseConfig = {
-
-  apiKey: "AIzaSyBWlVw3NQjuEr77yQfNUWzpg-jb2K5YE6E",
-
-  authDomain: "gamehub-project-fb643.firebaseapp.com",
-
-  databaseURL: "https://gamehub-project-fb643-default-rtdb.europe-west1.firebasedatabase.app",
-
-  projectId: "gamehub-project-fb643",
-
-  storageBucket: "gamehub-project-fb643.firebasestorage.app",
-
-  messagingSenderId: "38222999508",
-
-  appId: "1:38222999508:web:f1c907ce29c22afcc53041"
-
-};
-
-  firebase.initializeApp(firebaseConfig);
-</script>
 
 <script>
 const COLS = 7;
@@ -150,9 +134,60 @@ function checkWin(row, col) {
   return false;
 }
 
+// Neue Bewertungsfunktion für bessere KI
 function evaluateBoard(board) {
-  // Sehr einfache Bewertung: 0 (kann erweitert werden)
-  return 0;
+  // Scoring für 4er, 3er, 2er Reihen für "yellow" - KI
+  // Sehr einfache Heuristik, kann erweitert werden
+  
+  function scoreLine(cells, player) {
+    let score = 0;
+    const countPlayer = cells.filter(c => c === player).length;
+    const countEmpty = cells.filter(c => c === null).length;
+    if(countPlayer === 4) score += 1000;
+    else if(countPlayer === 3 && countEmpty === 1) score += 5;
+    else if(countPlayer === 2 && countEmpty === 2) score += 2;
+    return score;
+  }
+
+  let score = 0;
+
+  // Alle horizontalen Linien checken
+  for(let r=0; r<ROWS; r++) {
+    for(let c=0; c<COLS-3; c++) {
+      const line = [board[r][c], board[r][c+1], board[r][c+2], board[r][c+3]];
+      score += scoreLine(line, 'yellow');
+      score -= scoreLine(line, 'red') * 2; // Gegner blocken hat höhere Priorität
+    }
+  }
+
+  // Vertikale Linien
+  for(let c=0; c<COLS; c++) {
+    for(let r=0; r<ROWS-3; r++) {
+      const line = [board[r][c], board[r+1][c], board[r+2][c], board[r+3][c]];
+      score += scoreLine(line, 'yellow');
+      score -= scoreLine(line, 'red') * 2;
+    }
+  }
+
+  // Diagonal (links oben -> rechts unten)
+  for(let r=0; r<ROWS-3; r++) {
+    for(let c=0; c<COLS-3; c++) {
+      const line = [board[r][c], board[r+1][c+1], board[r+2][c+2], board[r+3][c+3]];
+      score += scoreLine(line, 'yellow');
+      score -= scoreLine(line, 'red') * 2;
+    }
+  }
+
+  // Diagonal (rechts oben -> links unten)
+  for(let r=0; r<ROWS-3; r++) {
+    for(let c=3; c<COLS; c++) {
+      const line = [board[r][c], board[r+1][c-1], board[r+2][c-2], board[r+3][c-3]];
+      score += scoreLine(line, 'yellow');
+      score -= scoreLine(line, 'red') * 2;
+    }
+  }
+
+  return score;
 }
 
 function getAvailableRow(board, col) {
@@ -176,6 +211,8 @@ function minimax(board, depth, alpha, beta, maximizingPlayer) {
     if(board[0][c] === null) validColumns.push(c);
   }
 
+  if(validColumns.length === 0) return { score: 0 };
+
   if(maximizingPlayer) {
     let maxEval = -Infinity;
     let bestCol = validColumns[0];
@@ -184,6 +221,9 @@ function minimax(board, depth, alpha, beta, maximizingPlayer) {
       if(row === -1) continue;
       let newBoard = copyBoard(board);
       newBoard[row][col] = 'yellow';
+      if(checkWinMinimax(newBoard, row, col, 'yellow')) {
+        return { column: col, score: 1000000 }; // Sofort gewinnen
+      }
       let evalResult = minimax(newBoard, depth-1, alpha, beta, false);
       if(evalResult.score > maxEval) {
         maxEval = evalResult.score;
@@ -201,6 +241,9 @@ function minimax(board, depth, alpha, beta, maximizingPlayer) {
       if(row === -1) continue;
       let newBoard = copyBoard(board);
       newBoard[row][col] = 'red';
+      if(checkWinMinimax(newBoard, row, col, 'red')) {
+        return { column: col, score: -1000000 }; // Sofort verlieren verhindern
+      }
       let evalResult = minimax(newBoard, depth-1, alpha, beta, true);
       if(evalResult.score < minEval) {
         minEval = evalResult.score;
@@ -211,6 +254,35 @@ function minimax(board, depth, alpha, beta, maximizingPlayer) {
     }
     return {column: bestCol, score: minEval};
   }
+}
+
+// Hilfsfunktion für Minimax um Sieg zu erkennen
+function checkWinMinimax(board, row, col, player) {
+  const directions = [
+    {dr:0, dc:1},
+    {dr:1, dc:0},
+    {dr:1, dc:1},
+    {dr:1, dc:-1}
+  ];
+
+  function count(dir) {
+    let r = row + dir.dr;
+    let c = col + dir.dc;
+    let count = 0;
+    while(r>=0 && r<ROWS && c>=0 && c<COLS && board[r][c] === player) {
+      count++;
+      r += dir.dr;
+      c += dir.dc;
+    }
+    return count;
+  }
+
+  for(let d of directions) {
+    if(count(d) + count({dr:-d.dr, dc:-d.dc}) + 1 >=4) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function aiMove() {
