@@ -1,5 +1,7 @@
 const COLS = 7;
 const ROWS = 6;
+const MAX_DEPTH = 4;
+
 let board = [];
 let currentPlayer = 'red'; // rot beginnt
 let gameOver = false;
@@ -77,7 +79,11 @@ function checkWin(row, col) {
     let r = row + dir.dr;
     let c = col + dir.dc;
     let count = 0;
-    while (r >= 0 && r < ROWS && c >= 0 && c < COLS && board[r][c] === currentPlayer) {
+    while (
+      r >= 0 && r < ROWS &&
+      c >= 0 && c < COLS &&
+      board[r][c] === currentPlayer
+    ) {
       count++;
       r += dir.dr;
       c += dir.dc;
