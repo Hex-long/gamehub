@@ -8,9 +8,8 @@ const gameDiv = document.getElementById('game');
 const status = document.getElementById('status');
 
 let mode = new URLSearchParams(window.location.search).get('mode');
-currentPlayer = (mode === 'ai') ? 'yellow' : 'red';
+currentPlayer = 'red'; // rot beginnt immer – KI spielt dann 2. (gelb)
 
-// Spielbrett erstellen
 function createBoard() {
   board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
   gameDiv.innerHTML = '';
@@ -29,10 +28,8 @@ function createBoard() {
     }
   }
 
-  // Wenn gelb (KI) beginnt
-  if (mode === 'ai' && currentPlayer === 'yellow') {
-    aiMove();
-  }
+  // Falls KI sofort dran ist
+  maybeAiMove();
 }
 
 function isPlayerTurn() {
@@ -53,9 +50,7 @@ function makeMove(col) {
         saveWin();
       } else {
         togglePlayer();
-        if (mode === 'ai' && currentPlayer === 'yellow') {
-          setTimeout(aiMove, 200); // kleine Pause für KI-Zug
-        }
+        maybeAiMove(); // prüfen, ob KI als nächstes dran ist
       }
       break;
     }
@@ -79,10 +74,10 @@ function togglePlayer() {
 
 function checkWin(row, col) {
   const directions = [
-    { dr: 0, dc: 1 },   // horizontal
-    { dr: 1, dc: 0 },   // vertical
-    { dr: 1, dc: 1 },   // diagonal down-right
-    { dr: 1, dc: -1 }   // diagonal down-left
+    { dr: 0, dc: 1 },
+    { dr: 1, dc: 0 },
+    { dr: 1, dc: 1 },
+    { dr: 1, dc: -1 }
   ];
 
   function count(dir) {
@@ -118,15 +113,20 @@ function saveWin() {
 }
 
 function aiMove() {
-  console.table(board); // Debug
+  console.table(board);
   const { column, score } = minimax(board, MAX_DEPTH, -Infinity, Infinity, true);
-  console.log("KI wählt Spalte:", column, "mit Bewertung:", score);
+  console.log("KI spielt Spalte:", column, "Bewertung:", score);
 
   if (column !== undefined) {
     makeMove(column);
-  } else {
-    console.warn("KI konnte keinen gültigen Zug finden.");
   }
 }
 
+function maybeAiMove() {
+  if (!gameOver && mode === 'ai' && currentPlayer === 'yellow') {
+    setTimeout(aiMove, 300);
+  }
+}
+
+// Starte Spiel
 createBoard();
