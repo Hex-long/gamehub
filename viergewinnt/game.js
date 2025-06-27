@@ -1,21 +1,16 @@
-console.log("Mode:", mode);
-console.log("Current player:", currentPlayer);
-
-
 const COLS = 7;
 const ROWS = 6;
 let board = [];
-let currentPlayer;
+let currentPlayer = 'red'; // rot beginnt
 let gameOver = false;
 
 const gameDiv = document.getElementById('game');
 const status = document.getElementById('status');
 
-let mode = new URLSearchParams(window.location.search).get('mode');
-currentPlayer = 'red'; // rot beginnt immer – KI spielt dann 2. (gelb)
+let mode = new URLSearchParams(window.location.search).get('mode') || 'ai';
 
 function createBoard() {
-  board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+  board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
   gameDiv.innerHTML = '';
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
@@ -24,37 +19,31 @@ function createBoard() {
       cell.dataset.row = r;
       cell.dataset.col = c;
       cell.addEventListener('click', () => {
-        if (!gameOver && isPlayerTurn()) {
+        if (!gameOver && currentPlayer === 'red') {
           makeMove(c);
         }
       });
       gameDiv.appendChild(cell);
     }
   }
-
-  // Falls KI sofort dran ist
-  maybeAiMove();
-}
-
-function isPlayerTurn() {
-  return !(mode === 'ai' && currentPlayer === 'yellow');
+  updateBoard();
 }
 
 function makeMove(col) {
   if (gameOver) return;
 
   for (let row = ROWS - 1; row >= 0; row--) {
-    if (board[row][col] === null) {
+    if (!board[row][col]) {
       board[row][col] = currentPlayer;
       updateBoard();
-
       if (checkWin(row, col)) {
         gameOver = true;
         status.textContent = currentPlayer + " gewinnt!";
-        saveWin();
       } else {
         togglePlayer();
-        maybeAiMove(); // prüfen, ob KI als nächstes dran ist
+        if (mode === 'ai' && currentPlayer === 'yellow') {
+          setTimeout(aiMove, 500);
+        }
       }
       break;
     }
@@ -104,33 +93,22 @@ function checkWin(row, col) {
   return false;
 }
 
-function saveWin() {
-  const user = firebase.auth().currentUser;
-  if (!user) return;
-  const uid = user.uid;
-  const userRef = db.collection('users').doc(uid);
-
-  userRef.get().then(doc => {
-    const wins = doc.exists && doc.data().wins ? doc.data().wins : 0;
-    userRef.set({ wins: wins + 1 }, { merge: true });
-  });
-}
-
 function aiMove() {
-  console.table(board);
-  const { column, score } = minimax(board, MAX_DEPTH, -Infinity, Infinity, true);
-  console.log("KI spielt Spalte:", column, "Bewertung:", score);
-
+  const { column } = minimax(board, MAX_DEPTH, -Infinity, Infinity, true);
   if (column !== undefined) {
     makeMove(column);
+  } else {
+    for (let c = 0; c < COLS; c++) {
+      if (!board[0][c]) {
+        makeMove(c);
+        break;
+      }
+    }
   }
 }
 
-function maybeAiMove() {
-  if (!gameOver && mode === 'ai' && currentPlayer === 'yellow') {
-    setTimeout(aiMove, 300);
-  }
-}
-
-// Starte Spiel
 createBoard();
+
+if (mode === 'ai' && currentPlayer === 'yellow') {
+  setTimeout(aiMove, 500);
+}
