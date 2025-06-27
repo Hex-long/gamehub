@@ -111,15 +111,10 @@ function saveWin() {
 
 // KI-Zug (Minimax) placeholder (minimax.js macht das wirklich)
 function aiMove() {
-  // Hier kommt Minimax rein
-  // Einfacher Zufallszug als Platzhalter:
-  for (let c = 0; c < COLS; c++) {
-    if (!board[0][c]) {
-      setTimeout(() => makeMove(c), 500);
-      break;
-    }
-  }
+  const { column } = minimax(board, MAX_DEPTH, -Infinity, Infinity, true);
+  setTimeout(() => makeMove(column), 500);
 }
+
 
 let mode = new URLSearchParams(window.location.search).get('mode');
 
