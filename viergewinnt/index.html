@@ -1,1 +1,28 @@
-<!DOCTYPE html><html><head><title>Vier Gewinnt</title></head><body>Spiel</body></html>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vier Gewinnt</title>
+<link rel="stylesheet" href="style.css" />
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script src="../js/firebase.js"></script>
+<script src="../js/auth.js"></script>
+</head>
+<body>
+<h1>Vier Gewinnt</h1>
+<div id="game"></div>
+<button id="btnBack">Zurück zur Spielauswahl</button>
+<p id="status"></p>
+
+<script src="game.js"></script>
+<script src="peer.js"></script>
+<script src="minimax.js"></script>
+
+<script>
+document.getElementById('btnBack').onclick = () => {
+  window.location.href = '../home.html';
+};
+</script>
+</body>
+</html>
