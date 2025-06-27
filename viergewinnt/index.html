@@ -4,35 +4,235 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Vier Gewinnt</title>
-<link rel="stylesheet" href="style.css" />
+<style>
+  #game {
+    display: grid;
+    grid-template-columns: repeat(7, 50px);
+    grid-gap: 5px;
+    margin-bottom: 1rem;
+  }
+  .cell {
+    width: 50px; height: 50px;
+    background: #eee;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .red { background: red; }
+  .yellow { background: yellow; }
+</style>
 
-<!-- Firebase SDKs vor eigenen Skripten laden -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
-<!-- PeerJS -->
-<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
-<!-- Eigene Firebase-Skripte -->
-<script src="../js/firebase.js"></script>
-<script src="../js/auth.js"></script>
 </head>
 <body>
 <h1>Vier Gewinnt</h1>
 <div id="game"></div>
 <p id="status"></p>
-<button id="btnBack">Zurück zur Spielauswahl</button>
-
-<!-- Spielskripte in richtiger Reihenfolge -->
-<script src="minimax.js"></script>
-<script src="game.js"></script>
-<script src="peer.js"></script>
 
 <script>
-  document.getElementById('btnBack').onclick = () => {
-    window.location.href = '../home.html';
-  };
+  // Firebase config und Initialisierung
+const firebaseConfig = {
+
+  apiKey: "AIzaSyBWlVw3NQjuEr77yQfNUWzpg-jb2K5YE6E",
+
+  authDomain: "gamehub-project-fb643.firebaseapp.com",
+
+  databaseURL: "https://gamehub-project-fb643-default-rtdb.europe-west1.firebasedatabase.app",
+
+  projectId: "gamehub-project-fb643",
+
+  storageBucket: "gamehub-project-fb643.firebasestorage.app",
+
+  messagingSenderId: "38222999508",
+
+  appId: "1:38222999508:web:f1c907ce29c22afcc53041"
+
+};
+
+  firebase.initializeApp(firebaseConfig);
+</script>
+
+<script>
+const COLS = 7;
+const ROWS = 6;
+const MAX_DEPTH = 4;
+
+let board = [];
+let currentPlayer = 'red';
+let gameOver = false;
+
+const gameDiv = document.getElementById('game');
+const status = document.getElementById('status');
+
+let mode = new URLSearchParams(window.location.search).get('mode') || 'ai';
+
+function createBoard() {
+  board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+  gameDiv.innerHTML = '';
+  for(let r=0; r<ROWS; r++) {
+    for(let c=0; c<COLS; c++) {
+      const cell = document.createElement('div');
+      cell.classList.add('cell');
+      cell.dataset.row = r;
+      cell.dataset.col = c;
+      cell.addEventListener('click', () => {
+        if(!gameOver && currentPlayer === 'red') {
+          makeMove(c);
+        }
+      });
+      gameDiv.appendChild(cell);
+    }
+  }
+  updateBoard();
+}
+
+function makeMove(col) {
+  if(gameOver) return;
+  for(let row=ROWS-1; row>=0; row--) {
+    if(!board[row][col]) {
+      board[row][col] = currentPlayer;
+      updateBoard();
+      if(checkWin(row, col)) {
+        gameOver = true;
+        status.textContent = currentPlayer + " gewinnt!";
+      } else {
+        togglePlayer();
+        if(mode === 'ai' && currentPlayer === 'yellow') {
+          setTimeout(aiMove, 500);
+        }
+      }
+      break;
+    }
+  }
+}
+
+function updateBoard() {
+  document.querySelectorAll('.cell').forEach(cell => {
+    const r = +cell.dataset.row;
+    const c = +cell.dataset.col;
+    cell.classList.remove('red','yellow');
+    if(board[r][c]) cell.classList.add(board[r][c]);
+  });
+}
+
+function togglePlayer() {
+  currentPlayer = currentPlayer === 'red' ? 'yellow' : 'red';
+}
+
+function checkWin(row, col) {
+  const directions = [
+    {dr:0, dc:1},
+    {dr:1, dc:0},
+    {dr:1, dc:1},
+    {dr:1, dc:-1}
+  ];
+
+  function count(dir) {
+    let r = row + dir.dr;
+    let c = col + dir.dc;
+    let count = 0;
+    while(r>=0 && r<ROWS && c>=0 && c<COLS && board[r][c] === currentPlayer) {
+      count++;
+      r += dir.dr;
+      c += dir.dc;
+    }
+    return count;
+  }
+
+  for(let d of directions) {
+    if(count(d) + count({dr:-d.dr, dc:-d.dc}) + 1 >=4) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Sehr einfache Bewertungsfunktion für Minimax (erweitern wenn gewünscht)
+function evaluateBoard(board) {
+  // Für Demo: gib 0 zurück, KI sucht nur freie Plätze
+  return 0;
+}
+
+function getAvailableRow(board, col) {
+  for(let r=ROWS-1; r>=0; r--) {
+    if(!board[r][col]) return r;
+  }
+  return -1;
+}
+
+function copyBoard(board) {
+  return board.map(row => row.slice());
+}
+
+// Minimax mit Alpha-Beta-Pruning
+function minimax(board, depth, alpha, beta, maximizingPlayer) {
+  if(depth === 0) {
+    return { score: evaluateBoard(board) };
+  }
+
+  let validColumns = [];
+  for(let c=0; c<COLS; c++) {
+    if(board[0][c] === null) validColumns.push(c);
+  }
+
+  if(maximizingPlayer) {
+    let maxEval = -Infinity;
+    let bestCol = validColumns[0];
+    for(let col of validColumns) {
+      let row = getAvailableRow(board,col);
+      if(row === -1) continue;
+      let newBoard = copyBoard(board);
+      newBoard[row][col] = 'yellow';
+      let evalResult = minimax(newBoard, depth-1, alpha, beta, false);
+      if(evalResult.score > maxEval) {
+        maxEval = evalResult.score;
+        bestCol = col;
+      }
+      alpha = Math.max(alpha, maxEval);
+      if(beta <= alpha) break;
+    }
+    return {column: bestCol, score: maxEval};
+  } else {
+    let minEval = Infinity;
+    let bestCol = validColumns[0];
+    for(let col of validColumns) {
+      let row = getAvailableRow(board,col);
+      if(row === -1) continue;
+      let newBoard = copyBoard(board);
+      newBoard[row][col] = 'red';
+      let evalResult = minimax(newBoard, depth-1, alpha, beta, true);
+      if(evalResult.score < minEval) {
+        minEval = evalResult.score;
+        bestCol = col;
+      }
+      beta = Math.min(beta, minEval);
+      if(beta <= alpha) break;
+    }
+    return {column: bestCol, score: minEval};
+  }
+}
+
+function aiMove() {
+  const {column} = minimax(board, MAX_DEPTH, -Infinity, Infinity, true);
+  if(column !== undefined) {
+    makeMove(column);
+  } else {
+    for(let c=0; c<COLS; c++) {
+      if(!board[0][c]) {
+        makeMove(c);
+        break;
+      }
+    }
+  }
+}
+
+createBoard();
+
+if(mode === 'ai' && currentPlayer === 'yellow') {
+  setTimeout(aiMove, 500);
+}
 </script>
 </body>
 </html>
