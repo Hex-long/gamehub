@@ -1,3 +1,7 @@
+console.log("Mode:", mode);
+console.log("Current player:", currentPlayer);
+
+
 const COLS = 7;
 const ROWS = 6;
 let board = [];
